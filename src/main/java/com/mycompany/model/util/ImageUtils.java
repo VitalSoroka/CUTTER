@@ -13,31 +13,31 @@ public class ImageUtils {
         return RED_WEIGHT * pixel.getRed() + GREEN_WEIGHT * pixel.getGreen() + BLUE_WEIGHT * pixel.getBlue();
     }
 
-    public Position getPositionForSnakeWay(int blockNumber, int width, int heigh){
-        Position position = getPositionForSnakeWay(blockNumber);
-        return new Position(position.getX() * width, position.getY() * heigh);
+    public static Position getPositionForSnakeWay(int blockNumber, int borderOffset,  int width, int heigh){
+        Position position = getPositionForSnakeWay(blockNumber, borderOffset);
+        return new Position((position.getX() - borderOffset) * width + borderOffset, (position.getY() - borderOffset) * heigh +borderOffset);
     }
 
     @SuppressWarnings("Duplicates")
-    public Position getPositionForSnakeWay(int blockNumber) {
+    public static Position getPositionForSnakeWay(int blockNumber, int borderOffset) {
         Position result;
         int sizeFullMatrix = (int) Math.floor(Math.sqrt(blockNumber));
         if (sizeFullMatrix % 2 == 0) {
             if (sizeFullMatrix * sizeFullMatrix == blockNumber) {
-                return new Position(0, sizeFullMatrix - 1);
+                return new Position(borderOffset, sizeFullMatrix - 1 + borderOffset);
             }
             int remainingWay = (blockNumber - (sizeFullMatrix * sizeFullMatrix));
             int offsetX = remainingWay / (sizeFullMatrix + 2) == 0 ? remainingWay % (sizeFullMatrix + 2) : sizeFullMatrix + 1;
             int offsetY = sizeFullMatrix + 1 - (remainingWay / (sizeFullMatrix + 2)) * (remainingWay - offsetX);
-            return new Position(offsetX - 1, offsetY - 1);
+            return new Position(offsetX - 1 + borderOffset, offsetY - 1 + borderOffset);
         } else {
             if (sizeFullMatrix * sizeFullMatrix == blockNumber) {
-                return new Position(sizeFullMatrix - 1, 0);
+                return new Position(sizeFullMatrix - 1 + borderOffset, borderOffset);
             }
             int remainingWay = (blockNumber - (sizeFullMatrix * sizeFullMatrix));
             int offsetY = remainingWay / (sizeFullMatrix + 2) == 0 ? remainingWay % (sizeFullMatrix + 2) : sizeFullMatrix + 1;
             int offsetX = sizeFullMatrix + 1 - (remainingWay / (sizeFullMatrix + 2)) * (remainingWay - offsetY);
-            return new Position(offsetX - 1, offsetY - 1);
+            return new Position(offsetX - 1 + borderOffset, offsetY - 1 + borderOffset);
         }
     }
 
