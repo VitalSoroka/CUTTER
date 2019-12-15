@@ -10,11 +10,10 @@ import java.io.IOException;
 
 public class ImageServiceImpl implements ImageService {
 
-    public BufferedImage loadImage(File file) {
+    public BufferedImage loadImage(String  path) {
         BufferedImage img = null;
         try {
-            System.out.println(file.getAbsoluteFile());
-            img = ImageIO.read(file);
+            img = ImageIO.read(new File(path));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -23,8 +22,8 @@ public class ImageServiceImpl implements ImageService {
 
     public boolean saveImage(BufferedImage image, String name, ImgFormat format, String path) {
         try {
-            File outputfile = new File(path + name + format.getFormat());
-            ImageIO.write(image, format.getFormat(), outputfile);
+            File outputFile = new File(path + name + format.getFormat());
+            ImageIO.write(image, format.getFormat(), outputFile);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
