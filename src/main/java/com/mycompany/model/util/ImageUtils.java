@@ -21,10 +21,20 @@ public class ImageUtils {
         return new Position(position.getX() * width,position.getY() * height);
     }
 
+    public static void toBlue(BufferedImage image){
+        for (int i = 0; i < image.getHeight(); i++) {
+            for (int j = 0; j < image.getWidth(); j++) {
+                image.setRGB (i, j, new Color((int) ( new Color(image.getRGB(i, j)).getBlue()),
+                        (int)( 225-new Color(image.getRGB(i, j)).getBlue()),
+                        (int) ( 0*new Color(image.getRGB(i, j)).getBlue())).getRGB());
+            }
+        }
+    }
+
     public static void clearLSB(BufferedImage image) {
         for (int i = 0; i < image.getHeight(); i++) {
             for (int j = 0; j < image.getWidth(); j++) {
-                image.setRGB(image.getRGB(i, j) & 0xFFFEFEFE, i, j);
+                image.setRGB (i, j, image.getRGB(i, j) & 0xFFFEFEFE);
 
             }
         }
@@ -33,17 +43,39 @@ public class ImageUtils {
     public static void clearTwoLSB(BufferedImage image) {
         for (int i = 0; i < image.getHeight(); i++) {
             for (int j = 0; j < image.getWidth(); j++) {
-                image.setRGB(image.getRGB(i, j) & 0xFFFCFCFC, i, j);
-
+                image.setRGB( i, j, image.getRGB(i, j) & 0xFFFCFCFC);
             }
         }
+    }
+
+    public static int convertRGBToBlackAndWhite(int rgb){
+        int avg = (((rgb & 0xFF0000) >> 16) + ((rgb & 0x00FF00) >> 8) + (rgb & 0x0000FF))/3;
+        return (rgb & 0xFF000000) | (avg << 16) | (avg << 8) | avg;
+    }
+
+    public static void convertImgToBlackAndWhite(BufferedImage image) {
+        for (int i = 0; i < image.getHeight(); i++) {
+            for (int j = 0; j < image.getWidth(); j++) {
+                image.setRGB( i, j, convertRGBToBlackAndWhite(image.getRGB(i, j)));
+            }
+        }
+    }
+    public static String  convertImgToBites(BufferedImage image) {
+        StringBuffer result = new StringBuffer();
+        for (int i = 0; i < image.getHeight(); i++) {
+            for (int j = 0; j < image.getWidth(); j++) {
+                char symbol = (char) (image.getRGB(i, j) & 0xff);
+                result.append(TextUtils.getBitesForASCIISymbol(symbol));
+            }
+        }
+        return result.toString();
     }
 
     public static void addNoise(BufferedImage image, float volume){
         int amount = Math.round(volume * 0xFF / 100);
         Random generator = new Random(new Date().getTime());
-        for (int i = 0; i < image.getHeight(); i++) {
-            for (int j = 0; j < image.getWidth(); j++) {
+        for (int i = 0; i < image.getWidth(); i++) {
+            for (int j = 0; j < image.getHeight(); j++) {
                 Color pixelColr = new Color(image.getRGB(i, j));
                 int noiseForBlue = generator.nextInt(amount + 1);
                 int noiseForGreen = generator.nextInt(amount + 1);
@@ -66,6 +98,21 @@ public class ImageUtils {
         return new Color(colorPixel.getRed(), colorPixel.getGreen(), newBlueComponent).getRGB();
     }
 
+    public static int calculateNewComponent(BufferedImage image, Position position, double signalEnergy, char bite){
+        Color colorPixel = new Color(image.getRGB(position.getX(), position.getY()));
+        int redComponent = new Color(image.getRGB(position.getX(), position.getY())).getRed();
+        int blueComponent = getBlueComponent(image, position);
+        int greenComponent = new Color(image.getRGB(position.getX(), position.getY())).getGreen();
+        int newRedComponent = redComponent + (int) (signalEnergy * ImageUtils.getBrightsForPixel(colorPixel) * (2 * (bite - 48) - 1) );
+        newRedComponent = Math.max(Math.min(0xFF, newRedComponent), 0);
+        int newBlueComponent = blueComponent + (int) (signalEnergy * ImageUtils.getBrightsForPixel(colorPixel) * (2 * (bite - 48) - 1) );
+        newBlueComponent = Math.max(Math.min(0xFF, newBlueComponent), 0);
+        int newGreenComponent = greenComponent + (int) (signalEnergy * ImageUtils.getBrightsForPixel(colorPixel) * (2 * (bite - 48) - 1) );
+        newGreenComponent = Math.max(Math.min(0xFF, newGreenComponent), 0);
+
+        return new Color(newRedComponent, newGreenComponent, newBlueComponent).getRGB();
+    }
+
     public static int getBlueComponent(BufferedImage image, Position position){
         Color colorPixel = new Color(image.getRGB(position.getX(), position.getY()));
         return colorPixel.getBlue();
@@ -80,7 +127,15 @@ public class ImageUtils {
         }
         return (sumOfBlueComponentInCross - 2 * blueComponent) / (crossSize * 4);
     }
-
+    public static int avgComponetInCross(BufferedImage image, Position position, int crossSize){
+        double component = getBrightsForPixel(new Color(image.getRGB(position.getX(), position.getY())));
+        int sumOfBlueComponentInCross = 0;
+        for (int i = -crossSize; i <= crossSize; i++) {
+            sumOfBlueComponentInCross += getBrightsForPixel(new Color(image.getRGB(position.getX() + i, position.getY())));
+            sumOfBlueComponentInCross += getBrightsForPixel(new Color(image.getRGB(position.getX(), position.getY() + i)));
+        }
+        return (int)(sumOfBlueComponentInCross - 2 * component) / (crossSize * 4);
+    }
 
     @SuppressWarnings("Duplicates")
     public static Position getPositionForSnakeWay(int blockNumber, int borderOffset) {
